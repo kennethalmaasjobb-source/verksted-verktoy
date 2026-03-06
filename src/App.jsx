@@ -313,6 +313,42 @@ function ToolForm({ tool, onChange, isEdit }) {
   );
 }
 
+function UserCodeEditor({ userCode, onSave, toast, st }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(userCode);
+  const [show, setShow] = useState(false);
+
+  function save() {
+    if (!draft.trim()) return;
+    onSave(draft.trim());
+    setEditing(false);
+    toast("Kode oppdatert!");
+  }
+
+  return editing ? (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <input style={{ ...st.inp, flex: 1, minWidth: 160 }}
+        value={draft} onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && save()}
+        autoFocus />
+      <button style={st.primary} onClick={save}>Lagre</button>
+      <button style={st.secondary} onClick={() => { setEditing(false); setDraft(userCode); }}>Avbryt</button>
+    </div>
+  ) : (
+    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ background: "#0d0d15", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 16px", fontFamily: "monospace", fontSize: 16, letterSpacing: 3, color: "#f5a623", minWidth: 120 }}>
+        {show ? userCode : "•".repeat(userCode.length)}
+      </div>
+      <button style={{ ...st.secondary, padding: "8px 14px", fontSize: 12 }} onClick={() => setShow(s => !s)}>
+        {show ? "Skjul" : "Vis"}
+      </button>
+      <button style={{ ...st.secondary, padding: "8px 14px", fontSize: 12 }} onClick={() => { setDraft(userCode); setEditing(true); }}>
+        ✏ Endre kode
+      </button>
+    </div>
+  );
+}
+
 // ── App ──────────────────────────────────────────────────────────
 const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: true };
 
@@ -336,19 +372,26 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newTool, setNewTool] = useState(emptyTool);
   const [saving, setSaving] = useState(false);
-  const [importPreview, setImportPreview] = useState(null); // null | { tools, filename }
+  const [importPreview, setImportPreview] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [userCode, setUserCode] = useState("verktoy123");
+  const [showAddCodePrompt, setShowAddCodePrompt] = useState(false);
+  const [addCodeInput, setAddCodeInput] = useState("");
+  const [addCodeError, setAddCodeError] = useState("");
 
   // ── Load data ──
   useEffect(() => {
     async function load() {
       try {
-        const [toolRows, notifRows] = await Promise.all([
+        const [toolRows, notifRows, settingsRows] = await Promise.all([
           sbFetch("tools?order=added_date.asc"),
           sbFetch("notifications?order=id.desc&limit=50"),
+          sbFetch("settings"),
         ]);
         setTools((toolRows || []).map(rowToTool));
         setNotifications((notifRows || []).map(rowToNotif));
+        const codeSetting = (settingsRows || []).find(s => s.key === "user_add_code");
+        if (codeSetting) setUserCode(codeSetting.value);
       } catch (e) {
         setDbError(e.message);
       } finally {
@@ -494,6 +537,33 @@ export default function App() {
     setImportPreview(null);
     setImporting(false);
     toast(`${ok} verktøy importert!`);
+  }
+
+  function handleRequestAdd() {
+    if (isAdmin) { setView("add"); return; }
+    setAddCodeInput("");
+    setAddCodeError("");
+    setShowAddCodePrompt(true);
+  }
+
+  function handleUserCodeSubmit() {
+    if (addCodeInput === userCode) {
+      setShowAddCodePrompt(false);
+      setView("add");
+    } else {
+      setAddCodeError("Feil kode. Prøv igjen.");
+    }
+  }
+
+  async function saveUserCode(newCode) {
+    try {
+      await sbFetch("settings?key=eq.user_add_code", {
+        method: "PATCH",
+        body: JSON.stringify({ value: newCode }),
+        prefer: "return=minimal",
+      });
+      setUserCode(newCode);
+    } catch (e) { toastErr("Kunne ikke lagre kode"); }
   }
 
   function goToDetail(tool, startEditing = false) {
@@ -822,9 +892,17 @@ export default function App() {
       <Header backTo="list" extra={<button style={{ ...st.secondary, fontSize: 13 }} onClick={() => { setIsAdmin(false); setView("list"); }}>Logg ut</button>} />
       <div style={st.main}>
         <div style={st.secTitle}>Admin — Varsler og hendelseslogg</div>
-        <button style={{ ...st.primary, marginBottom: 24 }} onClick={() => setView("calibration")}>
+        <button style={{ ...st.primary, marginBottom: 12 }} onClick={() => setView("calibration")}>
           📅 Vis kalibreringsoversikt
         </button>
+
+        <div style={{ ...st.box, marginBottom: 24 }}>
+          <div style={{ ...st.secTitle, marginBottom: 12 }}>Kode for å legge til verktøy</div>
+          <div style={{ fontSize: 13, color: "#888", marginBottom: 14 }}>
+            Vanlige brukere må skrive inn denne koden for å få lov til å legge til nytt verktøy.
+          </div>
+          <UserCodeEditor userCode={userCode} onSave={saveUserCode} toast={toast} st={st} />
+        </div>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
           <label style={{ ...st.secondary, cursor: "pointer", display: "inline-block" }}>
@@ -880,6 +958,29 @@ export default function App() {
     <div style={st.app}>
       {successMsg && <div style={st.toast}>✓ {successMsg}</div>}
       {errorMsg && <div style={st.toastErr}>✗ {errorMsg}</div>}
+
+      {/* Code prompt modal */}
+      {showAddCodePrompt && (
+        <div style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#111118", border: "1px solid #333", borderRadius: 14, padding: 28, width: 340, boxShadow: "0 8px 40px #000a" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#e8e8e0", marginBottom: 6 }}>Skriv inn kode</div>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 18 }}>Du trenger en kode for å legge til nytt verktøy.</div>
+            <input
+              style={{ ...st.inp, width: "100%", boxSizing: "border-box", marginBottom: 10 }}
+              type="password" placeholder="Kode"
+              value={addCodeInput}
+              onChange={e => setAddCodeInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleUserCodeSubmit()}
+              autoFocus
+            />
+            {addCodeError && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10 }}>{addCodeError}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={st.primary} onClick={handleUserCodeSubmit}>Bekreft</button>
+              <button style={st.secondary} onClick={() => setShowAddCodePrompt(false)}>Avbryt</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={st.header}>
         <div>
           <div style={st.logo}>Toolbase</div>
@@ -887,7 +988,7 @@ export default function App() {
         </div>
         <div style={st.nav}>
           {isAdmin && <span style={{ fontSize: 11, color: "#f5a623", border: "1px solid #f5a62344", borderRadius: 4, padding: "3px 8px" }}>🔑 Admin</span>}
-          <button style={st.navBtn(false)} onClick={() => setView("add")}>＋ Legg til</button>
+          <button style={st.navBtn(false)} onClick={handleRequestAdd}>＋ Legg til</button>
           <button style={st.notifBtn} onClick={() => isAdmin ? setView("admin") : setView("login")}>
             🔔 Admin
             {unreadCount > 0 && <span style={st.badge}>{unreadCount}</span>}
