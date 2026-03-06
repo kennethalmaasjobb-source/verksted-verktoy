@@ -193,7 +193,7 @@ const st = {
   navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#333", background: a ? "#f5a62322" : "transparent", color: a ? "#f5a623" : "#aaa", cursor: "pointer", fontSize: 13 }),
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
-  main:      { maxWidth: 900, margin: "0 auto", padding: "24px 16px" },
+  main:      { padding: "24px 32px" },
   inp:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   sel:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   card:      { background: "#111118", border: "1px solid #222", borderRadius: 12, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "border-color 0.2s,background 0.2s" },
@@ -887,8 +887,14 @@ export default function App() {
       </div>
       <div style={st.main}>
         <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          <input style={{ ...st.inp, flex: 2, minWidth: 180 }} placeholder="🔍  Søk etter navn, serienr, sted..."
-            value={search} onChange={e => setSearch(e.target.value)} />
+          <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
+            <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
+              value={search} onChange={e => setSearch(e.target.value)} />
+            {search && (
+              <button onClick={() => setSearch("")}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
+            )}
+          </div>
           <select style={{ ...st.sel, flex: 1 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="alle">Alle statuser</option>
             <option value="ok">OK</option>
@@ -898,6 +904,12 @@ export default function App() {
           <select style={{ ...st.sel, flex: 1 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
             {categories.map(c => <option key={c} value={c}>{c === "alle" ? "Alle kategorier" : c}</option>)}
           </select>
+          {(search || filterStatus !== "alle" || filterCategory !== "alle") && (
+            <button style={{ ...st.secondary, padding: "10px 14px", fontSize: 12 }}
+              onClick={() => { setSearch(""); setFilterStatus("alle"); setFilterCategory("alle"); }}>
+              Nullstill filter
+            </button>
+          )}
         </div>
         <div style={{ color: "#555", fontSize: 12, marginBottom: 14 }}>{filtered.length} verktøy vises</div>
         {filtered.map(tool => {
