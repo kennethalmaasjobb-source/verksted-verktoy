@@ -187,8 +187,9 @@ function CalibrationBadge({ dateStr }) {
 // ── Styles ───────────────────────────────────────────────────────
 const st = {
   app:       { minHeight: "100vh", background: "#0a0a0f", color: "#e8e8e0", fontFamily: "'DM Mono','Courier New',monospace" },
-  header:    { background: "#111118", borderBottom: "1px solid #222", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 },
-  logo:      { fontSize: 18, fontWeight: 700, letterSpacing: 2, color: "#f5a623", textTransform: "uppercase" },
+  header:    { background: "#111118", borderBottom: "1px solid #222", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 },
+  logo:      { fontSize: 22, fontWeight: 700, letterSpacing: 2, color: "#f5a623", textTransform: "uppercase", lineHeight: 1.1 },
+  logoSub:   { fontSize: 11, color: "#555", letterSpacing: 1, marginTop: 2 },
   nav:       { display: "flex", gap: 8, alignItems: "center" },
   navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#333", background: a ? "#f5a62322" : "transparent", color: a ? "#f5a623" : "#aaa", cursor: "pointer", fontSize: 13 }),
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13 },
@@ -504,7 +505,10 @@ export default function App() {
 
   const Header = ({ backTo, backLabel = "← Tilbake", extra }) => (
     <div style={st.header}>
-      <span style={st.logo}>🔧 VerkstedVerktøy</span>
+      <div>
+        <div style={st.logo}>Toolbase</div>
+        <div style={st.logoSub}>av Kenneth Almås</div>
+      </div>
       <div style={st.nav}>
         {extra}
         {backTo && <button style={st.secondary} onClick={() => setView(backTo)}>{backLabel}</button>}
@@ -515,14 +519,16 @@ export default function App() {
   // ── Loading / error ──
   if (loading) return (
     <div style={st.app}>
-      <div style={st.header}><span style={st.logo}>🔧 VerkstedVerktøy</span></div>
+      <div style={st.header}>
+        <div><div style={st.logo}>Toolbase</div><div style={st.logoSub}>av Kenneth Almås</div></div>
+      </div>
       <div style={st.spinner}>⏳ Kobler til database...</div>
     </div>
   );
 
   if (dbError) return (
     <div style={st.app}>
-      <div style={st.header}><span style={st.logo}>🔧 VerkstedVerktøy</span></div>
+      <div style={st.header}><div><div style={st.logo}>Toolbase</div><div style={st.logoSub}>av Kenneth Almås</div></div></div>
       <div style={{ ...st.main, paddingTop: 60 }}>
         <div style={{ color: "#ef4444", marginBottom: 12, fontWeight: 700 }}>⚠ Kunne ikke koble til databasen</div>
         <div style={{ color: "#666", fontSize: 13, marginBottom: 16 }}>Sjekk at Supabase-tabellene er opprettet og at URL/nøkkel er riktig.</div>
@@ -875,7 +881,10 @@ export default function App() {
       {successMsg && <div style={st.toast}>✓ {successMsg}</div>}
       {errorMsg && <div style={st.toastErr}>✗ {errorMsg}</div>}
       <div style={st.header}>
-        <span style={st.logo}>🔧 VerkstedVerktøy</span>
+        <div>
+          <div style={st.logo}>Toolbase</div>
+          <div style={st.logoSub}>av Kenneth Almås</div>
+        </div>
         <div style={st.nav}>
           {isAdmin && <span style={{ fontSize: 11, color: "#f5a623", border: "1px solid #f5a62344", borderRadius: 4, padding: "3px 8px" }}>🔑 Admin</span>}
           <button style={st.navBtn(false)} onClick={() => setView("add")}>＋ Legg til</button>
@@ -885,8 +894,8 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={st.main}>
-        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+      <div style={{ background: "#0d0d13", borderBottom: "1px solid #1a1a2a", padding: "12px 32px", position: "sticky", top: 61, zIndex: 99 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
             <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
               value={search} onChange={e => setSearch(e.target.value)} />
@@ -911,6 +920,8 @@ export default function App() {
             </button>
           )}
         </div>
+      </div>
+      <div style={st.main}>
         <div style={{ color: "#555", fontSize: 12, marginBottom: 14 }}>{filtered.length} verktøy vises</div>
         {filtered.map(tool => {
           const calibDays = getDaysUntilCalibration(tool.lastCalibration);
