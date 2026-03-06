@@ -1024,11 +1024,12 @@ export default function App() {
       </div>
       <div style={st.main}>
         <div style={{ color: "#555", fontSize: 12, marginBottom: 14 }}>{filtered.length} verktøy vises</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 10 }}>
         {filtered.map(tool => {
           const calibDays = getDaysUntilCalibration(tool.lastCalibration);
           const calibWarning = tool.calibrationRequired && calibDays !== null && calibDays <= 30;
           return (
-            <div key={tool.id} style={st.card}
+            <div key={tool.id} style={{ ...st.card, marginBottom: 0 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#f5a623"; e.currentTarget.style.background = "#111820"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#222"; e.currentTarget.style.background = "#111118"; }}
               onClick={() => goToDetail(tool, false)}>
@@ -1068,6 +1069,7 @@ export default function App() {
             </div>
           );
         })}
+        </div>
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
