@@ -161,7 +161,7 @@ function exportToCSV(tools) {
   URL.revokeObjectURL(url);
 }
 
-const ADMIN_CODE = "admin123";
+const DEFAULT_ADMIN_CODE = "admin123";
 
 const STATUS_CONFIG = {
   ok:     { label: "OK",     color: "#22c55e", bg: "#052e16", border: "#166534" },
@@ -349,6 +349,41 @@ function UserCodeEditor({ userCode, onSave, toast, st }) {
   );
 }
 
+function AdminCodeEditor({ currentCode, onSave, toast, st }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(currentCode);
+  const [show, setShow] = useState(false);
+
+  function save() {
+    if (!draft.trim()) return;
+    onSave(draft.trim());
+    setEditing(false);
+  }
+
+  return editing ? (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <input style={{ ...st.inp, flex: 1, minWidth: 160 }}
+        value={draft} onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && save()}
+        autoFocus />
+      <button style={st.primary} onClick={save}>Lagre</button>
+      <button style={st.secondary} onClick={() => { setEditing(false); setDraft(currentCode); }}>Avbryt</button>
+    </div>
+  ) : (
+    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ background: "#0d0d15", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 16px", fontFamily: "monospace", fontSize: 16, letterSpacing: 3, color: "#f5a623", minWidth: 120 }}>
+        {show ? currentCode : "•".repeat(currentCode.length)}
+      </div>
+      <button style={{ ...st.secondary, padding: "8px 14px", fontSize: 12 }} onClick={() => setShow(s => !s)}>
+        {show ? "Skjul" : "Vis"}
+      </button>
+      <button style={{ ...st.secondary, padding: "8px 14px", fontSize: 12 }} onClick={() => { setDraft(currentCode); setEditing(true); }}>
+        ✏ Endre kode
+      </button>
+    </div>
+  );
+}
+
 // ── App ──────────────────────────────────────────────────────────
 const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: true };
 
@@ -375,6 +410,7 @@ export default function App() {
   const [importPreview, setImportPreview] = useState(null);
   const [importing, setImporting] = useState(false);
   const [userCode, setUserCode] = useState("verktoy123");
+  const [adminCodeState, setAdminCodeState] = useState(DEFAULT_ADMIN_CODE);
   const [showAddCodePrompt, setShowAddCodePrompt] = useState(false);
   const [addCodeInput, setAddCodeInput] = useState("");
   const [addCodeError, setAddCodeError] = useState("");
@@ -392,6 +428,8 @@ export default function App() {
         setNotifications((notifRows || []).map(rowToNotif));
         const codeSetting = (settingsRows || []).find(s => s.key === "user_add_code");
         if (codeSetting) setUserCode(codeSetting.value);
+        const adminCodeSetting = (settingsRows || []).find(s => s.key === "admin_code");
+        if (adminCodeSetting) setAdminCodeState(adminCodeSetting.value);
       } catch (e) {
         setDbError(e.message);
       } finally {
@@ -427,7 +465,7 @@ export default function App() {
   });
 
   function handleLogin() {
-    if (adminCode === ADMIN_CODE) { setIsAdmin(true); setView("admin"); setLoginError(""); }
+    if (adminCode === adminCodeState) { setIsAdmin(true); setView("admin"); setLoginError(""); }
     else setLoginError("Feil kode. Prøv igjen.");
   }
 
@@ -564,6 +602,18 @@ export default function App() {
       });
       setUserCode(newCode);
     } catch (e) { toastErr("Kunne ikke lagre kode"); }
+  }
+
+  async function saveAdminCode(newCode) {
+    try {
+      await sbFetch("settings?key=eq.admin_code", {
+        method: "PATCH",
+        body: JSON.stringify({ value: newCode }),
+        prefer: "return=minimal",
+      });
+      setAdminCodeState(newCode);
+      toast("Adminkode oppdatert!");
+    } catch (e) { toastErr("Kunne ikke lagre adminkode"); }
   }
 
   function goToDetail(tool, startEditing = false) {
@@ -897,11 +947,23 @@ export default function App() {
         </button>
 
         <div style={{ ...st.box, marginBottom: 24 }}>
-          <div style={{ ...st.secTitle, marginBottom: 12 }}>Kode for å legge til verktøy</div>
-          <div style={{ fontSize: 13, color: "#888", marginBottom: 14 }}>
-            Vanlige brukere må skrive inn denne koden for å få lov til å legge til nytt verktøy.
+          <div style={{ ...st.secTitle, marginBottom: 12 }}>Tilgangskoder</div>
+
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "#f5a623", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Brukerkode — legg til verktøy</div>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>
+              Vanlige brukere må skrive inn denne koden for å legge til nytt verktøy.
+            </div>
+            <UserCodeEditor userCode={userCode} onSave={saveUserCode} toast={toast} st={st} />
           </div>
-          <UserCodeEditor userCode={userCode} onSave={saveUserCode} toast={toast} st={st} />
+
+          <div style={{ borderTop: "1px solid #1a1a2a", paddingTop: 16 }}>
+            <div style={{ fontSize: 12, color: "#f5a623", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Adminkode</div>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>
+              Koden som gir tilgang til admin-panelet.
+            </div>
+            <AdminCodeEditor currentCode={adminCodeState} onSave={saveAdminCode} toast={toast} st={st} />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
