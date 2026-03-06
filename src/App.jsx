@@ -58,7 +58,109 @@ function rowToNotif(r) {
   return { id: r.id, msg: r.msg, date: r.date, read: r.read };
 }
 
-// ── Constants ────────────────────────────────────────────────────
+// ── CSV helpers ──────────────────────────────────────────────────
+function parseCSV(text) {
+  // Detect delimiter
+  const delim = text.indexOf(";") !== -1 ? ";" : ",";
+  const lines = text.replace(/\r/g, "").split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(delim).map(h => h.trim().toLowerCase());
+
+  // Map known column names to our fields
+  const col = (names) => {
+    for (const n of names) {
+      const i = headers.findIndex(h => h.includes(n));
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+
+  const iName     = col(["verktøynavn", "navn", "name", "tool"]);
+  const iLok      = col(["lokasjon", "location", "sted"]);
+  const iHylle    = col(["hylle", "shelf"]);
+  const iRad      = col(["rad", "row"]);
+  const iPlassering = col(["plassering", "placement"]);
+  const iDel      = col(["delenummer", "part", "serial", "serienummer"]);
+  const iLev      = col(["leverandør", "supplier", "vendor"]);
+  const iStatus   = col(["status"]);
+  const iKat      = col(["kategori", "category"]);
+  const iNotes    = col(["notater", "notes", "merknad"]);
+
+  const tools = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(delim);
+    const get = (idx) => idx !== -1 ? (cols[idx] || "").trim() : "";
+
+    const name = get(iName);
+    if (!name) continue;
+
+    const lokRaw = get(iLok);
+    const hylle  = get(iHylle);
+    const rad    = get(iRad);
+    const plassering = get(iPlassering);
+
+    // Detect location type
+    let locType = "skap";
+    if (lokRaw.toLowerCase().includes("tavle")) locType = "tavle";
+    else if (lokRaw.toLowerCase().includes("reol")) locType = "skap";
+    else if (lokRaw.toLowerCase().includes("gulv") || lokRaw.toLowerCase().includes("vegg")) locType = "gulv";
+
+    // Status mapping
+    const statusRaw = get(iStatus).toLowerCase();
+    let status = "ok";
+    if (statusRaw.includes("defekt") || statusRaw.includes("ødelagt")) status = "defekt";
+    else if (statusRaw.includes("slitt") || statusRaw.includes("mangler")) status = "slitt";
+
+    // Notes: combine leverandør, plassering and original notes/status
+    const leverandor = get(iLev);
+    const noteParts = [];
+    if (leverandor) noteParts.push(`Leverandør: ${leverandor}`);
+    if (plassering) noteParts.push(`Plassering: ${plassering}`);
+    const origNotes = get(iNotes) || (iStatus !== -1 && get(iStatus) && status === "ok" ? get(iStatus) : "");
+    if (origNotes && origNotes.toLowerCase() !== "ok" && origNotes.toLowerCase() !== "") noteParts.push(origNotes);
+
+    tools.push({
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+      name,
+      category: get(iKat) || "Importert",
+      serialNumber: get(iDel),
+      location: { type: locType, name: lokRaw, hylle, rad },
+      status,
+      calibrationRequired: false,
+      lastCalibration: "",
+      notes: noteParts.join(" | "),
+      addedDate: new Date().toISOString().split("T")[0],
+    });
+  }
+  return tools;
+}
+
+function exportToCSV(tools) {
+  const headers = ["Verktøynavn","Kategori","Serienummer","Lokasjon type","Lokasjon navn","Hylle","Rad","Status","Kalibreringspliktig","Siste kalibrering","Notater","Lagt til"];
+  const rows = tools.map(t => [
+    t.name,
+    t.category,
+    t.serialNumber,
+    t.location.type,
+    t.location.name,
+    t.location.hylle,
+    t.location.rad,
+    t.status,
+    t.calibrationRequired ? "Ja" : "Nei",
+    t.lastCalibration,
+    t.notes,
+    t.addedDate,
+  ].map(v => `"${(v || "").replace(/"/g, '""')}"`).join(";"));
+  const csv = [headers.join(";"), ...rows].join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `verksted-verktoy-${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const ADMIN_CODE = "admin123";
 
 const STATUS_CONFIG = {
@@ -233,6 +335,8 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newTool, setNewTool] = useState(emptyTool);
   const [saving, setSaving] = useState(false);
+  const [importPreview, setImportPreview] = useState(null); // null | { tools, filename }
+  const [importing, setImporting] = useState(false);
 
   // ── Load data ──
   useEffect(() => {
@@ -351,6 +455,44 @@ export default function App() {
       await sbFetch("notifications?read=eq.false", { method: "PATCH", body: JSON.stringify({ read: true }), prefer: "return=minimal" });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (e) { toastErr("Kunne ikke oppdatere"); }
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        // Try latin-1 first (common for Norwegian Excel exports)
+        const text = ev.target.result;
+        const parsed = parseCSV(text);
+        if (parsed.length === 0) { toastErr("Ingen verktøy funnet i filen. Sjekk formatet."); return; }
+        setImportPreview({ tools: parsed, filename: file.name });
+      } catch (err) { toastErr("Kunne ikke lese filen: " + err.message); }
+    };
+    reader.readAsText(file, "latin-1");
+    e.target.value = "";
+  }
+
+  async function handleConfirmImport() {
+    if (!importPreview) return;
+    setImporting(true);
+    let ok = 0, fail = 0;
+    for (const tool of importPreview.tools) {
+      try {
+        await sbFetch("tools", { method: "POST", body: JSON.stringify(toolToRow(tool)) });
+        ok++;
+      } catch { fail++; }
+    }
+    setTools(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const newTools = importPreview.tools.filter(t => !existingIds.has(t.id));
+      return [...prev, ...newTools];
+    });
+    await pushNotif(`CSV-import: ${ok} verktøy importert${fail > 0 ? `, ${fail} feilet` : ""}`);
+    setImportPreview(null);
+    setImporting(false);
+    toast(`${ok} verktøy importert!`);
   }
 
   function goToDetail(tool, startEditing = false) {
@@ -627,6 +769,45 @@ export default function App() {
     );
   }
 
+  // ── IMPORT PREVIEW ──
+  if (view === "admin" && importPreview) return (
+    <div style={st.app}>
+      {successMsg && <div style={st.toast}>✓ {successMsg}</div>}
+      {errorMsg && <div style={st.toastErr}>✗ {errorMsg}</div>}
+      <Header backTo={null} extra={
+        <>
+          <button style={st.secondary} onClick={() => setImportPreview(null)}>Avbryt</button>
+          <button style={{ ...st.primary, opacity: importing ? 0.6 : 1 }} onClick={handleConfirmImport} disabled={importing}>
+            {importing ? "Importerer..." : `✓ Importer ${importPreview.tools.length} verktøy`}
+          </button>
+        </>
+      } />
+      <div style={st.main}>
+        <div style={st.secTitle}>Forhåndsvisning — {importPreview.filename}</div>
+        <div style={{ color: "#aaa", fontSize: 13, marginBottom: 16 }}>
+          Fant <strong style={{ color: "#f5a623" }}>{importPreview.tools.length} verktøy</strong> i filen. Sjekk at dataene ser riktige ut før du importerer.
+        </div>
+        <div style={{ background: "#0d0d15", border: "1px solid #2a2a3a", borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 2fr 1fr", gap: 0, background: "#111118", padding: "10px 16px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>
+            <div>Verktøynavn</div><div>Kategori</div><div>Lokasjon</div><div>Status</div>
+          </div>
+          {importPreview.tools.map((t, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 2fr 1fr", gap: 0, padding: "10px 16px", borderTop: "1px solid #1a1a2a", fontSize: 13 }}>
+              <div style={{ color: "#e8e8e0", fontWeight: 600 }}>{t.name}</div>
+              <div style={{ color: "#888" }}>{t.category}</div>
+              <div style={{ color: "#888" }}>
+                {t.location.name}
+                {t.location.hylle ? ` · ${t.location.hylle}` : ""}
+                {t.location.rad ? ` · ${t.location.rad}` : ""}
+              </div>
+              <div><span style={st.pill(t.status)}>{STATUS_CONFIG[t.status].label}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   // ── ADMIN PANEL ──
   if (view === "admin") return (
     <div style={st.app}>
@@ -638,6 +819,16 @@ export default function App() {
         <button style={{ ...st.primary, marginBottom: 24 }} onClick={() => setView("calibration")}>
           📅 Vis kalibreringsoversikt
         </button>
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+          <label style={{ ...st.secondary, cursor: "pointer", display: "inline-block" }}>
+            📥 Importer CSV
+            <input type="file" accept=".csv" style={{ display: "none" }} onChange={handleImportFile} />
+          </label>
+          <button style={st.secondary} onClick={() => exportToCSV(tools)}>
+            📤 Eksporter CSV ({tools.length} verktøy)
+          </button>
+        </div>
 
         {calibrationWarnings.length > 0 && (
           <div style={{ marginBottom: 24 }}>
