@@ -152,7 +152,14 @@ function exportToCSV(tools) {
     t.addedDate,
   ].map(v => `"${(v || "").replace(/"/g, '""')}"`).join(";"));
   const csv = [headers.join(";"), ...rows].join("\r\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  // Encode as UTF-8 with BOM so Excel opens Norwegian characters correctly
+  const encoder = new TextEncoder();
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const encoded = encoder.encode(csv);
+  const combined = new Uint8Array(bom.length + encoded.length);
+  combined.set(bom);
+  combined.set(encoded, bom.length);
+  const blob = new Blob([combined], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -545,14 +552,28 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        // Try latin-1 first (common for Norwegian Excel exports)
-        const text = ev.target.result;
+        // Auto-detect encoding: check for UTF-8 BOM or try UTF-8 first, fall back to Windows-1252
+        const bytes = new Uint8Array(ev.target.result);
+        let text;
+        // Check for UTF-8 BOM (EF BB BF)
+        if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+          text = new TextDecoder("utf-8").decode(bytes.slice(3));
+        } else {
+          // Try UTF-8 first
+          const utf8 = new TextDecoder("utf-8").decode(bytes);
+          // If it has replacement characters (invalid UTF-8), fall back to Windows-1252
+          if (utf8.includes("\uFFFD")) {
+            text = new TextDecoder("windows-1252").decode(bytes);
+          } else {
+            text = utf8;
+          }
+        }
         const parsed = parseCSV(text);
         if (parsed.length === 0) { toastErr("Ingen verktøy funnet i filen. Sjekk formatet."); return; }
         setImportPreview({ tools: parsed, filename: file.name });
       } catch (err) { toastErr("Kunne ikke lese filen: " + err.message); }
     };
-    reader.readAsText(file, "latin-1");
+    reader.readAsArrayBuffer(file);
     e.target.value = "";
   }
 
