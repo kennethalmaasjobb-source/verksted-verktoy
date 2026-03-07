@@ -201,7 +201,7 @@ const st = {
   navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#333", background: a ? "#f5a62322" : "transparent", color: a ? "#f5a623" : "#aaa", cursor: "pointer", fontSize: 13 }),
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
-  main:      { padding: "24px 32px" },
+  main:      { padding: "24px 16px" },
   inp:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   sel:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   card:      { background: "#111118", border: "1px solid #222", borderRadius: 12, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "border-color 0.2s,background 0.2s" },
@@ -1116,7 +1116,7 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={{ background: "#0d0d13", borderBottom: "1px solid #1a1a2a", padding: "12px 32px", position: "sticky", top: 61, zIndex: 99 }}>
+      <div style={{ background: "#0d0d13", borderBottom: "1px solid #1a1a2a", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
             <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
@@ -1145,7 +1145,7 @@ export default function App() {
       </div>
       <div style={st.main}>
         <div style={{ color: "#555", fontSize: 12, marginBottom: 14 }}>{filtered.length} verktøy vises</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
         {filtered.map(tool => {
           const calibDays = getDaysUntilCalibration(tool.lastCalibration);
           const calibWarning = tool.calibrationRequired && calibDays !== null && calibDays <= 30;
