@@ -421,7 +421,7 @@ export default function App() {
   const [showAddCodePrompt, setShowAddCodePrompt] = useState(false);
   const [addCodeInput, setAddCodeInput] = useState("");
   const [addCodeError, setAddCodeError] = useState("");
-  const [pendingStatusChange, setPendingStatusChange] = useState(null); // { toolId, newStatus }
+  const [gridCols, setGridCols] = useState(2); // { toolId, newStatus }
 
   // ── Load data ──
   useEffect(() => {
@@ -1144,8 +1144,16 @@ export default function App() {
         </div>
       </div>
       <div style={st.main}>
-        <div style={{ color: "#555", fontSize: 12, marginBottom: 14 }}>{filtered.length} verktøy vises</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ color: "#555", fontSize: 12 }}>{filtered.length} verktøy vises</div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button onClick={() => setGridCols(1)}
+              style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${gridCols === 1 ? "#f5a623" : "#333"}`, background: gridCols === 1 ? "#f5a62322" : "transparent", color: gridCols === 1 ? "#f5a623" : "#666", cursor: "pointer", fontSize: 14 }}>☰</button>
+            <button onClick={() => setGridCols(2)}
+              style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${gridCols === 2 ? "#f5a623" : "#333"}`, background: gridCols === 2 ? "#f5a62322" : "transparent", color: gridCols === 2 ? "#f5a623" : "#666", cursor: "pointer", fontSize: 14 }}>⊞</button>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: gridCols === 1 ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
         {filtered.map(tool => {
           const calibDays = getDaysUntilCalibration(tool.lastCalibration);
           const calibWarning = tool.calibrationRequired && calibDays !== null && calibDays <= 30;
