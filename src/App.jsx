@@ -717,6 +717,28 @@ export default function App() {
       <div style={st.app}>
         {successMsg && <div style={st.toast}>✓ {successMsg}</div>}
         {errorMsg && <div style={st.toastErr}>✗ {errorMsg}</div>}
+
+        {showAddCodePrompt && (
+          <div style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ background: "#111118", border: "1px solid #333", borderRadius: 14, padding: 28, width: 340, boxShadow: "0 8px 40px #000a" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#e8e8e0", marginBottom: 6 }}>Skriv inn kode</div>
+              <div style={{ fontSize: 13, color: "#666", marginBottom: 18 }}>Du trenger en kode for å endre status på verktøyet.</div>
+              <input
+                style={{ ...st.inp, width: "100%", boxSizing: "border-box", marginBottom: 10 }}
+                type="password" placeholder="Kode"
+                value={addCodeInput}
+                onChange={e => setAddCodeInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleUserCodeSubmit()}
+                autoFocus
+              />
+              {addCodeError && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10 }}>{addCodeError}</div>}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button style={st.primary} onClick={handleUserCodeSubmit}>Bekreft</button>
+                <button style={st.secondary} onClick={() => { setShowAddCodePrompt(false); setPendingStatusChange(null); }}>Avbryt</button>
+              </div>
+            </div>
+          </div>
+        )}
         <Header
           backTo={editing ? null : "list"}
           extra={editing ? (
