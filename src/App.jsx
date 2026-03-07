@@ -36,6 +36,7 @@ function rowToTool(r) {
     lastCalibration: r.last_calibration || "",
     notes: r.notes || "",
     addedDate: r.added_date || "",
+    imageUrl: r.image_url || "",
   };
 }
 
@@ -51,6 +52,7 @@ function toolToRow(t) {
     last_calibration: t.lastCalibration || null,
     notes: t.notes || "",
     added_date: t.addedDate || "",
+    image_url: t.imageUrl || "",
   };
 }
 
@@ -392,7 +394,7 @@ function AdminCodeEditor({ currentCode, onSave, toast, st }) {
 }
 
 // ── App ──────────────────────────────────────────────────────────
-const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: true };
+const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: true, imageUrl: "" };
 
 export default function App() {
   const [tools, setTools] = useState([]);
@@ -651,6 +653,58 @@ export default function App() {
     } catch (e) { toastErr("Kunne ikke lagre adminkode"); }
   }
 
+  async function uploadToolImage(toolId, file) {
+    const ext = file.name.split(".").pop();
+    const path = `${toolId}.${ext}`;
+    // Delete old image first
+    await fetch(`${SUPABASE_URL}/storage/v1/object/tool-images/${path}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    });
+    // Upload new
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/tool-images/${path}`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": file.type, "x-upsert": "true" },
+      body: file,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return `${SUPABASE_URL}/storage/v1/object/public/tool-images/${path}`;
+  }
+
+  async function deleteToolImage(toolId, imageUrl) {
+    if (!imageUrl) return;
+    const path = imageUrl.split("/tool-images/")[1];
+    if (!path) return;
+    await fetch(`${SUPABASE_URL}/storage/v1/object/tool-images/${path}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    });
+  }
+
+  async function handleImageUpload(file, toolId, currentImageUrl) {
+    setSaving(true);
+    try {
+      const url = await uploadToolImage(toolId, file);
+      await sbFetch(`tools?id=eq.${toolId}`, { method: "PATCH", body: JSON.stringify({ image_url: url }), prefer: "return=minimal" });
+      setTools(prev => prev.map(t => t.id === toolId ? { ...t, imageUrl: url } : t));
+      if (editDraft) setEditDraft(prev => ({ ...prev, imageUrl: url }));
+      toast("Bilde lastet opp!");
+    } catch (e) { toastErr("Kunne ikke laste opp bilde"); }
+    setSaving(false);
+  }
+
+  async function handleImageDelete(toolId, imageUrl) {
+    setSaving(true);
+    try {
+      await deleteToolImage(toolId, imageUrl);
+      await sbFetch(`tools?id=eq.${toolId}`, { method: "PATCH", body: JSON.stringify({ image_url: "" }), prefer: "return=minimal" });
+      setTools(prev => prev.map(t => t.id === toolId ? { ...t, imageUrl: "" } : t));
+      if (editDraft) setEditDraft(prev => ({ ...prev, imageUrl: "" }));
+      toast("Bilde slettet!");
+    } catch (e) { toastErr("Kunne ikke slette bilde"); }
+    setSaving(false);
+  }
+
   function goToDetail(tool, startEditing = false) {
     setSelectedTool(tool);
     setEditDraft(startEditing ? { ...tool } : null);
@@ -809,6 +863,34 @@ export default function App() {
                   <div style={{ color: "#555", fontSize: 13 }}>Ikke kalibreringspliktig</div>
                 </div>
               )}
+
+              <div style={{ marginBottom: 24 }}>
+                <div style={st.secTitle}>Bilde</div>
+                {tool.imageUrl ? (
+                  <div>
+                    <img src={tool.imageUrl} alt={tool.name}
+                      style={{ width: "100%", maxWidth: 400, borderRadius: 10, border: "1px solid #222", objectFit: "cover", maxHeight: 280, display: "block", marginBottom: 10 }} />
+                    {isAdmin && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <label style={{ ...st.secondary, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}>
+                          🔄 Bytt bilde
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0], tool.id, tool.imageUrl)} />
+                        </label>
+                        <button style={{ ...st.danger, fontSize: 12, padding: "6px 12px" }} onClick={() => handleImageDelete(tool.id, tool.imageUrl)}>🗑 Slett bilde</button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  isAdmin ? (
+                    <label style={{ ...st.secondary, cursor: "pointer", display: "inline-block" }}>
+                      📷 Last opp bilde
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && handleImageUpload(e.target.files[0], tool.id, "")} />
+                    </label>
+                  ) : (
+                    <div style={{ color: "#555", fontSize: 13 }}>Ingen bilde registrert</div>
+                  )
+                )}
+              </div>
 
               <div style={{ marginBottom: 24 }}>
                 <div style={st.secTitle}>Endre status</div>
@@ -1162,6 +1244,10 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#f5a623"; e.currentTarget.style.background = "#111820"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#222"; e.currentTarget.style.background = "#111118"; }}
               onClick={() => goToDetail(tool, false)}>
+              {tool.imageUrl && (
+                <img src={tool.imageUrl} alt={tool.name}
+                  style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, marginBottom: 12, display: "block" }} />
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: "#e8e8e0", marginBottom: 4 }}>
