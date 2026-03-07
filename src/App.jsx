@@ -421,6 +421,7 @@ export default function App() {
   const [showAddCodePrompt, setShowAddCodePrompt] = useState(false);
   const [addCodeInput, setAddCodeInput] = useState("");
   const [addCodeError, setAddCodeError] = useState("");
+  const [pendingStatusChange, setPendingStatusChange] = useState(null); // { toolId, newStatus }
 
   // ── Load data ──
   useEffect(() => {
@@ -605,10 +606,23 @@ export default function App() {
     setShowAddCodePrompt(true);
   }
 
+  function handleRequestStatusChange(toolId, newStatus) {
+    if (isAdmin) { handleStatusChange(toolId, newStatus); return; }
+    setPendingStatusChange({ toolId, newStatus });
+    setAddCodeInput("");
+    setAddCodeError("");
+    setShowAddCodePrompt(true);
+  }
+
   function handleUserCodeSubmit() {
     if (addCodeInput === userCode) {
       setShowAddCodePrompt(false);
-      setView("add");
+      if (pendingStatusChange) {
+        handleStatusChange(pendingStatusChange.toolId, pendingStatusChange.newStatus);
+        setPendingStatusChange(null);
+      } else {
+        setView("add");
+      }
     } else {
       setAddCodeError("Feil kode. Prøv igjen.");
     }
@@ -778,7 +792,7 @@ export default function App() {
                 <div style={st.secTitle}>Endre status</div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <button key={key} onClick={() => handleStatusChange(tool.id, key)} disabled={saving}
+                    <button key={key} onClick={() => handleRequestStatusChange(tool.id, key)} disabled={saving}
                       style={{ padding: "8px 18px", borderRadius: 8, border: `2px solid ${tool.status === key ? cfg.color : "#333"}`, background: tool.status === key ? cfg.bg : "transparent", color: tool.status === key ? cfg.color : "#888", cursor: "pointer", fontWeight: 700, fontSize: 14, fontFamily: "inherit" }}>
                       {cfg.label}
                     </button>
@@ -1047,7 +1061,9 @@ export default function App() {
         <div style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#111118", border: "1px solid #333", borderRadius: 14, padding: 28, width: 340, boxShadow: "0 8px 40px #000a" }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#e8e8e0", marginBottom: 6 }}>Skriv inn kode</div>
-            <div style={{ fontSize: 13, color: "#666", marginBottom: 18 }}>Du trenger en kode for å legge til nytt verktøy.</div>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 18 }}>
+              {pendingStatusChange ? "Du trenger en kode for å endre status på verktøyet." : "Du trenger en kode for å legge til nytt verktøy."}
+            </div>
             <input
               style={{ ...st.inp, width: "100%", boxSizing: "border-box", marginBottom: 10 }}
               type="password" placeholder="Kode"
@@ -1059,7 +1075,7 @@ export default function App() {
             {addCodeError && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10 }}>{addCodeError}</div>}
             <div style={{ display: "flex", gap: 10 }}>
               <button style={st.primary} onClick={handleUserCodeSubmit}>Bekreft</button>
-              <button style={st.secondary} onClick={() => setShowAddCodePrompt(false)}>Avbryt</button>
+              <button style={st.secondary} onClick={() => { setShowAddCodePrompt(false); setPendingStatusChange(null); }}>Avbryt</button>
             </div>
           </div>
         </div>
