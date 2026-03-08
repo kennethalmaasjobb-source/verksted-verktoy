@@ -423,7 +423,8 @@ export default function App() {
   const [showAddCodePrompt, setShowAddCodePrompt] = useState(false);
   const [addCodeInput, setAddCodeInput] = useState("");
   const [addCodeError, setAddCodeError] = useState("");
-  const [gridCols, setGridCols] = useState(2); // { toolId, newStatus }
+  const [gridCols, setGridCols] = useState(2);
+  const [sortBy, setSortBy] = useState("navn");
 
   // ── Load data ──
   useEffect(() => {
@@ -472,6 +473,17 @@ export default function App() {
     return (t.name.toLowerCase().includes(q) || (t.serialNumber || "").toLowerCase().includes(q) || (t.location?.name || "").toLowerCase().includes(q))
       && (filterStatus === "alle" || t.status === filterStatus)
       && (filterCategory === "alle" || t.category === filterCategory);
+  }).sort((a, b) => {
+    if (sortBy === "navn") return a.name.localeCompare(b.name, "nb");
+    if (sortBy === "kategori") return a.category.localeCompare(b.category, "nb");
+    if (sortBy === "status") return ["ok","slitt","defekt"].indexOf(a.status) - ["ok","slitt","defekt"].indexOf(b.status);
+    if (sortBy === "kalibrering") {
+      const da = a.lastCalibration ? new Date(a.lastCalibration) : new Date(0);
+      const db = b.lastCalibration ? new Date(b.lastCalibration) : new Date(0);
+      return da - db;
+    }
+    if (sortBy === "lokasjon") return (a.location?.name || "").localeCompare(b.location?.name || "", "nb");
+    return 0;
   });
 
   function handleLogin() {
@@ -1217,9 +1229,16 @@ export default function App() {
           <select style={{ ...st.sel, flex: 1 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
             {categories.map(c => <option key={c} value={c}>{c === "alle" ? "Alle kategorier" : c}</option>)}
           </select>
-          {(search || filterStatus !== "alle" || filterCategory !== "alle") && (
+          <select style={{ ...st.sel, flex: 1 }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value="navn">Sorter: Navn</option>
+            <option value="kategori">Sorter: Kategori</option>
+            <option value="status">Sorter: Status</option>
+            <option value="lokasjon">Sorter: Lokasjon</option>
+            <option value="kalibrering">Sorter: Kalibrering</option>
+          </select>
+          {(search || filterStatus !== "alle" || filterCategory !== "alle" || sortBy !== "navn") && (
             <button style={{ ...st.secondary, padding: "10px 14px", fontSize: 12 }}
-              onClick={() => { setSearch(""); setFilterStatus("alle"); setFilterCategory("alle"); }}>
+              onClick={() => { setSearch(""); setFilterStatus("alle"); setFilterCategory("alle"); setSortBy("navn"); }}>
               Nullstill filter
             </button>
           )}
