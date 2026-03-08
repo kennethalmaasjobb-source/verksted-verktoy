@@ -869,7 +869,7 @@ export default function App() {
                 {tool.imageUrl ? (
                   <div>
                     <img src={tool.imageUrl} alt={tool.name}
-                      style={{ width: "100%", maxWidth: 400, borderRadius: 10, border: "1px solid #222", objectFit: "contain", display: "block", marginBottom: 10 }} />
+                      style={{ width: "50%", height: "auto", borderRadius: 10, border: "1px solid #222", objectFit: "contain", display: "block", marginBottom: 10 }} />
                     {isAdmin && (
                       <div style={{ display: "flex", gap: 8 }}>
                         <label style={{ ...st.secondary, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}>
@@ -1246,7 +1246,7 @@ export default function App() {
               onClick={() => goToDetail(tool, false)}>
               {tool.imageUrl && (
                 <img src={tool.imageUrl} alt={tool.name}
-                  style={{ width: "100%", height: "auto", objectFit: "contain", borderRadius: 8, marginBottom: 12, display: "block" }} />
+                  style={{ width: "50%", height: "auto", objectFit: "contain", borderRadius: 8, marginBottom: 12, display: "block" }} />
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
                 <div>
