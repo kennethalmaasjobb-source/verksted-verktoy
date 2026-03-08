@@ -1246,7 +1246,7 @@ export default function App() {
               onClick={() => goToDetail(tool, false)}>
               {tool.imageUrl && (
                 <img src={tool.imageUrl} alt={tool.name}
-                  style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, marginBottom: 12, display: "block" }} />
+                  style={{ width: "100%", height: 70, objectFit: "cover", borderRadius: 8, marginBottom: 12, display: "block" }} />
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
                 <div>
