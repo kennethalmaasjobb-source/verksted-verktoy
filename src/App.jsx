@@ -204,8 +204,8 @@ const st = {
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
   main:      { padding: "24px 16px" },
-  inp:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
-  sel:       { background: "#111118", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  inp:       { background: "#1a1a28", border: "1px solid #444", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  sel:       { background: "#1a1a28", border: "1px solid #444", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   card:      { background: "#111118", border: "1px solid #222", borderRadius: 12, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "border-color 0.2s,background 0.2s" },
   lbl:       { fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 },
   val:       { fontSize: 14, color: "#e8e8e0" },
@@ -1210,7 +1210,7 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={{ background: "#0d0d13", borderBottom: "1px solid #1a1a2a", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
+      <div style={{ background: "#111118", borderBottom: "2px solid #f5a62333", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
             <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
