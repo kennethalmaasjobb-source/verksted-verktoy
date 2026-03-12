@@ -415,6 +415,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [newTool, setNewTool] = useState(emptyTool);
+  const [newToolImage, setNewToolImage] = useState(null); // File object
   const [saving, setSaving] = useState(false);
   const [importPreview, setImportPreview] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -518,9 +519,18 @@ export default function App() {
     setSaving(true);
     try {
       await sbFetch("tools", { method: "POST", body: JSON.stringify(toolToRow(tool)) });
-      setTools(prev => [...prev, tool]);
+      let finalTool = tool;
+      if (newToolImage) {
+        try {
+          const url = await uploadToolImage(tool.id, newToolImage);
+          await sbFetch(`tools?id=eq.${tool.id}`, { method: "PATCH", body: JSON.stringify({ image_url: url }), prefer: "return=minimal" });
+          finalTool = { ...tool, imageUrl: url };
+        } catch (e) { /* image upload failed, continue without image */ }
+      }
+      setTools(prev => [...prev, finalTool]);
       await pushNotif(`Nytt verktøy lagt til: "${tool.name}" (${tool.category})`);
       setNewTool(emptyTool);
+      setNewToolImage(null);
       setView("list");
       toast("Verktøy lagt til!");
     } catch (e) { toastErr("Kunne ikke legge til verktøy: " + e.message); }
@@ -970,6 +980,29 @@ export default function App() {
       <div style={{ ...st.main, maxWidth: 640 }}>
         <div style={st.secTitle}>Legg til nytt verktøy</div>
         <div style={st.box}><ToolForm tool={newTool} onChange={setNewTool} isEdit={false} /></div>
+
+        <div style={{ ...st.box, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: "#f5a623", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Bilde (valgfritt)</div>
+          {newToolImage ? (
+            <div>
+              <img src={URL.createObjectURL(newToolImage)} alt="Forhåndsvisning"
+                style={{ width: "50%", height: "auto", objectFit: "contain", borderRadius: 8, marginBottom: 10, display: "block" }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <label style={{ ...st.secondary, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}>
+                  🔄 Bytt bilde
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && setNewToolImage(e.target.files[0])} />
+                </label>
+                <button style={{ ...st.danger, fontSize: 12, padding: "6px 12px" }} onClick={() => setNewToolImage(null)}>🗑 Fjern</button>
+              </div>
+            </div>
+          ) : (
+            <label style={{ ...st.secondary, cursor: "pointer", display: "inline-block" }}>
+              📷 Velg bilde
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && setNewToolImage(e.target.files[0])} />
+            </label>
+          )}
+        </div>
+
         <button style={{ ...st.primary, opacity: saving ? 0.6 : 1 }} onClick={handleAddTool} disabled={saving}>
           {saving ? "Lagrer..." : "＋ Legg til verktøy"}
         </button>
