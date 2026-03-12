@@ -426,6 +426,12 @@ export default function App() {
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
   const [gridCols, setGridCols] = useState(2);
   const [sortBy, setSortBy] = useState("navn");
+  const [bulkSelected, setBulkSelected] = useState(new Set());
+  const [bulkField, setBulkField] = useState("kategori");
+  const [bulkValue, setBulkValue] = useState("");
+  const [bulkLokType, setBulkLokType] = useState("skap");
+  const [bulkSearch, setBulkSearch] = useState("");
+  const [applying, setApplying] = useState(false);
 
   // ── Load data ──
   useEffect(() => {
@@ -1112,13 +1118,6 @@ export default function App() {
 
   // ── BULK EDIT ──
   if (view === "bulkedit") {
-    const [selected, setSelected] = useState(new Set());
-    const [bulkField, setBulkField] = useState("kategori");
-    const [bulkValue, setBulkValue] = useState("");
-    const [bulkLokType, setBulkLokType] = useState("skap");
-    const [bulkSearch, setBulkSearch] = useState("");
-    const [applying, setApplying] = useState(false);
-
     const visibleTools = tools.filter(t =>
       t.name.toLowerCase().includes(bulkSearch.toLowerCase()) ||
       t.category.toLowerCase().includes(bulkSearch.toLowerCase()) ||
@@ -1126,21 +1125,22 @@ export default function App() {
     );
 
     function toggleAll() {
-      if (selected.size === visibleTools.length) setSelected(new Set());
-      else setSelected(new Set(visibleTools.map(t => t.id)));
+      if (bulkSelected.size === visibleTools.length) setBulkSelected(new Set());
+      else setBulkSelected(new Set(visibleTools.map(t => t.id)));
     }
 
     async function applyBulk() {
-      if (!selected.size) return;
-      if (!bulkValue.trim()) return;
+      if (!bulkSelected.size) return;
+      if (bulkField !== "lokasjon_type" && !bulkValue.trim()) return;
       setApplying(true);
       let updated = 0;
-      for (const id of selected) {
+      for (const id of bulkSelected) {
         try {
+          const tool = tools.find(t => t.id === id);
           let patch = {};
           if (bulkField === "kategori") patch = { category: bulkValue };
-          else if (bulkField === "lokasjon_navn") patch = { location: { ...tools.find(t => t.id === id).location, name: bulkValue } };
-          else if (bulkField === "lokasjon_type") patch = { location: { ...tools.find(t => t.id === id).location, type: bulkLokType } };
+          else if (bulkField === "lokasjon_navn") patch = { location: { ...tool.location, name: bulkValue } };
+          else if (bulkField === "lokasjon_type") patch = { location: { ...tool.location, type: bulkLokType } };
           await sbFetch(`tools?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(patch), prefer: "return=minimal" });
           setTools(prev => prev.map(t => {
             if (t.id !== id) return t;
@@ -1154,7 +1154,7 @@ export default function App() {
       }
       await pushNotif(`Bulk-redigering: ${updated} verktøy oppdatert (${bulkField})`);
       toast(`${updated} verktøy oppdatert!`);
-      setSelected(new Set());
+      setBulkSelected(new Set());
       setApplying(false);
     }
 
@@ -1168,7 +1168,6 @@ export default function App() {
         <div style={st.main}>
           <div style={st.secTitle}>Bulk-rediger verktøy</div>
 
-          {/* Field selector + value */}
           <div style={{ ...st.box, marginBottom: 20 }}>
             <div style={{ fontSize: 12, color: "#f5a623", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Hva vil du endre?</div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
@@ -1195,35 +1194,32 @@ export default function App() {
             )}
           </div>
 
-          {/* Apply button + count */}
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
-            <button style={{ ...st.primary, opacity: (!selected.size || applying) ? 0.5 : 1 }}
-              onClick={applyBulk} disabled={!selected.size || applying}>
-              {applying ? "Lagrer..." : `✓ Bruk på ${selected.size} valgte verktøy`}
+            <button style={{ ...st.primary, opacity: (!bulkSelected.size || applying) ? 0.5 : 1 }}
+              onClick={applyBulk} disabled={!bulkSelected.size || applying}>
+              {applying ? "Lagrer..." : `✓ Bruk på ${bulkSelected.size} valgte verktøy`}
             </button>
-            {selected.size > 0 && (
-              <button style={{ ...st.secondary, fontSize: 13 }} onClick={() => setSelected(new Set())}>Fjern alle valg</button>
+            {bulkSelected.size > 0 && (
+              <button style={{ ...st.secondary, fontSize: 13 }} onClick={() => setBulkSelected(new Set())}>Fjern alle valg</button>
             )}
           </div>
 
-          {/* Search + select all */}
           <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
             <input style={{ ...st.inp, flex: 1 }} placeholder="🔍 Filtrer liste..."
               value={bulkSearch} onChange={e => setBulkSearch(e.target.value)} />
             <button style={{ ...st.secondary, fontSize: 13, whiteSpace: "nowrap" }} onClick={toggleAll}>
-              {selected.size === visibleTools.length ? "Fjern alle" : "Velg alle"}
+              {bulkSelected.size === visibleTools.length && visibleTools.length > 0 ? "Fjern alle" : "Velg alle"}
             </button>
           </div>
-          <div style={{ color: "#555", fontSize: 12, marginBottom: 12 }}>{visibleTools.length} verktøy · {selected.size} valgt</div>
+          <div style={{ color: "#555", fontSize: 12, marginBottom: 12 }}>{visibleTools.length} verktøy · {bulkSelected.size} valgt</div>
 
-          {/* Tool list */}
           <div style={{ background: "#0d0d15", border: "1px solid #1a1a2a", borderRadius: 10, overflow: "hidden" }}>
             {visibleTools.map((t, i) => (
               <div key={t.id}
-                onClick={() => setSelected(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })}
-                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderTop: i > 0 ? "1px solid #1a1a2a" : "none", cursor: "pointer", background: selected.has(t.id) ? "#111820" : "transparent", transition: "background 0.15s" }}>
-                <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${selected.has(t.id) ? "#f5a623" : "#444"}`, background: selected.has(t.id) ? "#f5a623" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {selected.has(t.id) && <span style={{ color: "#000", fontSize: 13, fontWeight: 700 }}>✓</span>}
+                onClick={() => setBulkSelected(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderTop: i > 0 ? "1px solid #1a1a2a" : "none", cursor: "pointer", background: bulkSelected.has(t.id) ? "#111820" : "transparent", transition: "background 0.15s" }}>
+                <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${bulkSelected.has(t.id) ? "#f5a623" : "#444"}`, background: bulkSelected.has(t.id) ? "#f5a623" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {bulkSelected.has(t.id) && <span style={{ color: "#000", fontSize: 13, fontWeight: 700 }}>✓</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, color: "#e8e8e0", fontSize: 14 }}>{t.name}</div>
