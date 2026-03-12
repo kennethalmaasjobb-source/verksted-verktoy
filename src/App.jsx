@@ -37,6 +37,7 @@ function rowToTool(r) {
     notes: r.notes || "",
     addedDate: r.added_date || "",
     imageUrl: r.image_url || "",
+    tags: r.tags || "",
   };
 }
 
@@ -53,6 +54,7 @@ function toolToRow(t) {
     notes: t.notes || "",
     added_date: t.addedDate || "",
     image_url: t.imageUrl || "",
+    tags: t.tags || "",
   };
 }
 
@@ -318,6 +320,15 @@ function ToolForm({ tool, onChange, isEdit }) {
           placeholder="Valgfrie notater..." value={tool.notes}
           onChange={e => onChange({ ...tool, notes: e.target.value })} />
       </div>
+
+      <div>
+        <div style={st.fl()}>Stikkord / andre navn</div>
+        <input style={{ ...st.inp, ...full }}
+          placeholder="F.eks: vinkelsliper, kvern, flex, grinder (skilles med komma)"
+          value={tool.tags || ""}
+          onChange={e => onChange({ ...tool, tags: e.target.value })} />
+        <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>Brukes kun til søk — vises ikke i listen</div>
+      </div>
     </div>
   );
 }
@@ -394,7 +405,7 @@ function AdminCodeEditor({ currentCode, onSave, toast, st }) {
 }
 
 // ── App ──────────────────────────────────────────────────────────
-const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: false, imageUrl: "" };
+const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: false, imageUrl: "", tags: "" };
 
 export default function App() {
   const [tools, setTools] = useState([]);
@@ -478,7 +489,7 @@ export default function App() {
   const categories = ["alle", ...Array.from(new Set(tools.map(t => t.category)))];
   const filtered = tools.filter(t => {
     const q = search.toLowerCase();
-    return (t.name.toLowerCase().includes(q) || (t.serialNumber || "").toLowerCase().includes(q) || (t.location?.name || "").toLowerCase().includes(q))
+    return (t.name.toLowerCase().includes(q) || (t.serialNumber || "").toLowerCase().includes(q) || (t.location?.name || "").toLowerCase().includes(q) || (t.tags || "").toLowerCase().includes(q))
       && (filterStatus === "alle" || t.status === filterStatus)
       && (filterCategory === "alle" || t.category === filterCategory);
   }).sort((a, b) => {
