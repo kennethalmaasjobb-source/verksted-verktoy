@@ -394,7 +394,7 @@ function AdminCodeEditor({ currentCode, onSave, toast, st }) {
 }
 
 // ── App ──────────────────────────────────────────────────────────
-const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: true, imageUrl: "" };
+const emptyTool = { name: "", category: "", serialNumber: "", location: { type: "skap", name: "", hylle: "", rad: "" }, status: "ok", notes: "", lastCalibration: "", addedDate: "", calibrationRequired: false, imageUrl: "" };
 
 export default function App() {
   const [tools, setTools] = useState([]);
@@ -1110,6 +1110,134 @@ export default function App() {
     </div>
   );
 
+  // ── BULK EDIT ──
+  if (view === "bulkedit") {
+    const [selected, setSelected] = useState(new Set());
+    const [bulkField, setBulkField] = useState("kategori");
+    const [bulkValue, setBulkValue] = useState("");
+    const [bulkLokType, setBulkLokType] = useState("skap");
+    const [bulkSearch, setBulkSearch] = useState("");
+    const [applying, setApplying] = useState(false);
+
+    const visibleTools = tools.filter(t =>
+      t.name.toLowerCase().includes(bulkSearch.toLowerCase()) ||
+      t.category.toLowerCase().includes(bulkSearch.toLowerCase()) ||
+      (t.location?.name || "").toLowerCase().includes(bulkSearch.toLowerCase())
+    );
+
+    function toggleAll() {
+      if (selected.size === visibleTools.length) setSelected(new Set());
+      else setSelected(new Set(visibleTools.map(t => t.id)));
+    }
+
+    async function applyBulk() {
+      if (!selected.size) return;
+      if (!bulkValue.trim()) return;
+      setApplying(true);
+      let updated = 0;
+      for (const id of selected) {
+        try {
+          let patch = {};
+          if (bulkField === "kategori") patch = { category: bulkValue };
+          else if (bulkField === "lokasjon_navn") patch = { location: { ...tools.find(t => t.id === id).location, name: bulkValue } };
+          else if (bulkField === "lokasjon_type") patch = { location: { ...tools.find(t => t.id === id).location, type: bulkLokType } };
+          await sbFetch(`tools?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(patch), prefer: "return=minimal" });
+          setTools(prev => prev.map(t => {
+            if (t.id !== id) return t;
+            if (bulkField === "kategori") return { ...t, category: bulkValue };
+            if (bulkField === "lokasjon_navn") return { ...t, location: { ...t.location, name: bulkValue } };
+            if (bulkField === "lokasjon_type") return { ...t, location: { ...t.location, type: bulkLokType } };
+            return t;
+          }));
+          updated++;
+        } catch (e) { /* continue */ }
+      }
+      await pushNotif(`Bulk-redigering: ${updated} verktøy oppdatert (${bulkField})`);
+      toast(`${updated} verktøy oppdatert!`);
+      setSelected(new Set());
+      setApplying(false);
+    }
+
+    const fieldLabels = { kategori: "Kategori", lokasjon_navn: "Skapnavn / lokasjon", lokasjon_type: "Lokasjonstype" };
+
+    return (
+      <div style={st.app}>
+        {successMsg && <div style={st.toast}>✓ {successMsg}</div>}
+        {errorMsg && <div style={st.toastErr}>✗ {errorMsg}</div>}
+        <Header backTo="admin" backLabel="← Admin" />
+        <div style={st.main}>
+          <div style={st.secTitle}>Bulk-rediger verktøy</div>
+
+          {/* Field selector + value */}
+          <div style={{ ...st.box, marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "#f5a623", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Hva vil du endre?</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+              {Object.entries(fieldLabels).map(([k, label]) => (
+                <button key={k} onClick={() => setBulkField(k)}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${bulkField === k ? "#f5a623" : "#333"}`, background: bulkField === k ? "#f5a62322" : "transparent", color: bulkField === k ? "#f5a623" : "#888", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {bulkField === "lokasjon_type" ? (
+              <div style={{ display: "flex", gap: 10 }}>
+                {[["skap","🗄 Skap"],["tavle","📌 Tavle"],["gulv","📍 Annet"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setBulkLokType(val)}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${bulkLokType === val ? "#f5a623" : "#333"}`, background: bulkLokType === val ? "#f5a62322" : "transparent", color: bulkLokType === val ? "#f5a623" : "#888", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <input style={{ ...st.inp, width: "100%", boxSizing: "border-box" }}
+                placeholder={bulkField === "kategori" ? "Ny kategori (f.eks. Elektrisk)" : "Nytt navn (f.eks. Skap 3)"}
+                value={bulkValue} onChange={e => setBulkValue(e.target.value)} />
+            )}
+          </div>
+
+          {/* Apply button + count */}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
+            <button style={{ ...st.primary, opacity: (!selected.size || applying) ? 0.5 : 1 }}
+              onClick={applyBulk} disabled={!selected.size || applying}>
+              {applying ? "Lagrer..." : `✓ Bruk på ${selected.size} valgte verktøy`}
+            </button>
+            {selected.size > 0 && (
+              <button style={{ ...st.secondary, fontSize: 13 }} onClick={() => setSelected(new Set())}>Fjern alle valg</button>
+            )}
+          </div>
+
+          {/* Search + select all */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+            <input style={{ ...st.inp, flex: 1 }} placeholder="🔍 Filtrer liste..."
+              value={bulkSearch} onChange={e => setBulkSearch(e.target.value)} />
+            <button style={{ ...st.secondary, fontSize: 13, whiteSpace: "nowrap" }} onClick={toggleAll}>
+              {selected.size === visibleTools.length ? "Fjern alle" : "Velg alle"}
+            </button>
+          </div>
+          <div style={{ color: "#555", fontSize: 12, marginBottom: 12 }}>{visibleTools.length} verktøy · {selected.size} valgt</div>
+
+          {/* Tool list */}
+          <div style={{ background: "#0d0d15", border: "1px solid #1a1a2a", borderRadius: 10, overflow: "hidden" }}>
+            {visibleTools.map((t, i) => (
+              <div key={t.id}
+                onClick={() => setSelected(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; })}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderTop: i > 0 ? "1px solid #1a1a2a" : "none", cursor: "pointer", background: selected.has(t.id) ? "#111820" : "transparent", transition: "background 0.15s" }}>
+                <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${selected.has(t.id) ? "#f5a623" : "#444"}`, background: selected.has(t.id) ? "#f5a623" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {selected.has(t.id) && <span style={{ color: "#000", fontSize: 13, fontWeight: 700 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: "#e8e8e0", fontSize: 14 }}>{t.name}</div>
+                  <div style={{ fontSize: 12, color: "#666" }}>{t.category} · {t.location.name || "—"} · {t.location.type}</div>
+                </div>
+                <span style={st.pill(t.status)}>{STATUS_CONFIG[t.status].label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── ADMIN PANEL ──
   if (view === "admin") return (
     <div style={st.app}>
@@ -1118,9 +1246,14 @@ export default function App() {
       <Header backTo="list" extra={<button style={{ ...st.secondary, fontSize: 13 }} onClick={() => { setIsAdmin(false); setView("list"); }}>Logg ut</button>} />
       <div style={st.main}>
         <div style={st.secTitle}>Admin — Varsler og hendelseslogg</div>
-        <button style={{ ...st.primary, marginBottom: 12 }} onClick={() => setView("calibration")}>
-          📅 Vis kalibreringsoversikt
-        </button>
+        <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+          <button style={st.primary} onClick={() => setView("calibration")}>
+            📅 Vis kalibreringsoversikt
+          </button>
+          <button style={st.secondary} onClick={() => setView("bulkedit")}>
+            ✏ Bulk-rediger verktøy
+          </button>
+        </div>
 
         <div style={{ ...st.box, marginBottom: 24 }}>
           <div style={{ ...st.secTitle, marginBottom: 12 }}>Tilgangskoder</div>
