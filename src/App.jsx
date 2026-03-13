@@ -203,18 +203,18 @@ const st = {
   logo:      { fontSize: 22, fontWeight: 700, letterSpacing: 2, color: "#f5a623", textTransform: "uppercase", lineHeight: 1.1 },
   logoSub:   { fontSize: 11, color: "#555", letterSpacing: 1, marginTop: 2 },
   nav:       { display: "flex", gap: 8, alignItems: "center" },
-  navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#333", background: a ? "#f5a62322" : "transparent", color: a ? "#f5a623" : "#aaa", cursor: "pointer", fontSize: 13 }),
-  notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 13 },
+  navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#f5a62344", background: a ? "#f5a62322" : "#1a120088", color: a ? "#f5a623" : "#c89040", cursor: "pointer", fontSize: 13 }),
+  notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #f5a62344", background: "#1a120088", color: "#c89040", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
   main:      { padding: "24px 16px" },
-  inp:       { background: "#1a1a28", border: "1px solid #444", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
-  sel:       { background: "#1a1a28", border: "1px solid #444", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  inp:       { background: "#1a1200", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  sel:       { background: "#1a1200", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
   card:      { background: "#111118", border: "1px solid #222", borderRadius: 12, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "border-color 0.2s,background 0.2s" },
   lbl:       { fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 },
   val:       { fontSize: 14, color: "#e8e8e0" },
   pill:      (s) => ({ display: "inline-block", padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: STATUS_CONFIG[s].color, background: STATUS_CONFIG[s].bg, border: `1px solid ${STATUS_CONFIG[s].border}` }),
   primary:   { padding: "10px 20px", borderRadius: 8, border: "none", background: "#f5a623", color: "#0a0a0f", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
-  secondary: { padding: "10px 20px", borderRadius: 8, border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
+  secondary: { padding: "10px 20px", borderRadius: 8, border: "1px solid #f5a62344", background: "#1a120066", color: "#c89040", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
   danger:    { padding: "10px 20px", borderRadius: 8, border: "1px solid #991b1b", background: "transparent", color: "#ef4444", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
   secTitle:  { fontSize: 13, color: "#f5a623", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12, borderBottom: "1px solid #222", paddingBottom: 8 },
   g2:        { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
@@ -1425,7 +1425,7 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={{ background: "#111118", borderBottom: "2px solid #f5a62333", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
+      <div style={{ background: "#1a1200", borderBottom: "2px solid #f5a62366", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
             <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
