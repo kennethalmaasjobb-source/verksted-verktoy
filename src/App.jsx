@@ -1461,6 +1461,22 @@ export default function App() {
         </div>
       </div>
       <div style={st.main}>
+        {missingTools.length > 0 && (
+          <div style={{ background: "#1a0a2e", border: "1px solid #6b21a8", borderRadius: 12, padding: "14px 18px", marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              ⚠ Manglende utstyr ({missingTools.length})
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {missingTools.map(t => (
+                <div key={t.id} onClick={() => goToDetail(t, false)}
+                  style={{ background: "#2a0a45", border: "1px solid #7c3aed", borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#d8b4fe", fontSize: 13, fontWeight: 600 }}>{t.name}</span>
+                  <span style={{ color: "#7c3aed", fontSize: 11 }}>{t.location.name || t.category}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ color: "#555", fontSize: 12 }}>{filtered.length} verktøy vises</div>
           <div style={{ display: "flex", gap: 4 }}>
