@@ -175,9 +175,10 @@ function exportToCSV(tools) {
 const DEFAULT_ADMIN_CODE = "admin123";
 
 const STATUS_CONFIG = {
-  ok:     { label: "OK",     color: "#22c55e", bg: "#052e16", border: "#166534" },
-  slitt:  { label: "Slitt",  color: "#f59e0b", bg: "#2d1700", border: "#92400e" },
-  defekt: { label: "Defekt", color: "#ef4444", bg: "#2d0000", border: "#991b1b" },
+  ok:      { label: "OK",      color: "#22c55e", bg: "#052e16", border: "#166534" },
+  slitt:   { label: "Slitt",   color: "#f59e0b", bg: "#2d1700", border: "#92400e" },
+  defekt:  { label: "Defekt",  color: "#ef4444", bg: "#2d0000", border: "#991b1b" },
+  mangler: { label: "Mangler", color: "#a855f7", bg: "#1a0a2e", border: "#6b21a8" },
 };
 
 function getDaysUntilCalibration(dateStr) {
@@ -485,7 +486,8 @@ export default function App() {
     const days = getDaysUntilCalibration(t.lastCalibration);
     return days !== null && days <= 30;
   });
-  const unreadCount = notifications.filter(n => !n.read).length + calibrationWarnings.length;
+  const missingTools = tools.filter(t => t.status === "mangler");
+  const unreadCount = notifications.filter(n => !n.read).length + calibrationWarnings.length + missingTools.length;
   const categories = ["alle", ...Array.from(new Set(tools.map(t => t.category)))];
   const filtered = tools.filter(t => {
     const q = search.toLowerCase();
@@ -495,7 +497,7 @@ export default function App() {
   }).sort((a, b) => {
     if (sortBy === "navn") return a.name.localeCompare(b.name, "nb");
     if (sortBy === "kategori") return a.category.localeCompare(b.category, "nb");
-    if (sortBy === "status") return ["ok","slitt","defekt"].indexOf(a.status) - ["ok","slitt","defekt"].indexOf(b.status);
+    if (sortBy === "status") return ["ok","slitt","defekt","mangler"].indexOf(a.status) - ["ok","slitt","defekt","mangler"].indexOf(b.status);
     if (sortBy === "kalibrering") {
       const da = a.lastCalibration ? new Date(a.lastCalibration) : new Date(0);
       const db = b.lastCalibration ? new Date(b.lastCalibration) : new Date(0);
@@ -518,8 +520,8 @@ export default function App() {
       setTools(prev => prev.map(t => t.id === toolId ? { ...t, status: newStatus } : t));
       if (editDraft?.id === toolId) setEditDraft(p => ({ ...p, status: newStatus }));
       setSelectedTool(p => p ? { ...p, status: newStatus } : p);
-      await pushNotif(`Statusendring: "${tool.name}" → ${STATUS_CONFIG[newStatus].label}`);
-      toast("Status oppdatert!");
+      await pushNotif(`Statusendring: "${tool.name}" → ${STATUS_CONFIG[newStatus].label}${newStatus === "mangler" ? " ⚠ Kan ikke finnes!" : ""}`);
+      toast(newStatus === "mangler" ? `⚠ ${tool.name} markert som manglende!` : "Status oppdatert!");
     } catch (e) { toastErr("Kunne ikke oppdatere status"); }
     setSaving(false);
   }
@@ -1346,6 +1348,21 @@ export default function App() {
           </div>
         )}
 
+        {tools.filter(t => t.status === "mangler").length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: "#a855f7", marginBottom: 10, fontWeight: 600 }}>⚠ Manglende utstyr ({tools.filter(t => t.status === "mangler").length})</div>
+            {tools.filter(t => t.status === "mangler").map(t => (
+              <div key={t.id} style={{ background: "#1a0a2e", border: "1px solid #6b21a8", borderRadius: 10, padding: "12px 16px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <div style={{ color: "#e8e8e0", fontWeight: 600 }}>{t.name}</div>
+                  <div style={{ color: "#aaa", fontSize: 12 }}>{t.category} · {t.location.name || "—"}</div>
+                </div>
+                <button style={{ ...st.secondary, fontSize: 12, padding: "4px 10px" }} onClick={() => goToDetail(t, false)}>Vis →</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ ...st.secTitle, marginBottom: 0 }}>Hendelseslogg</div>
           {notifications.some(n => !n.read) && <button style={{ ...st.secondary, fontSize: 12, padding: "4px 10px" }} onClick={markAllRead}>Merk alle som lest</button>}
@@ -1423,6 +1440,7 @@ export default function App() {
             <option value="ok">OK</option>
             <option value="slitt">Slitt</option>
             <option value="defekt">Defekt</option>
+            <option value="mangler">Mangler</option>
           </select>
           <select style={{ ...st.sel, flex: 1 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
             {categories.map(c => <option key={c} value={c}>{c === "alle" ? "Alle kategorier" : c}</option>)}
