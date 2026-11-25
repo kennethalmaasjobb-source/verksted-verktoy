@@ -824,15 +824,15 @@ export default function App() {
 
   const Header = ({ backTo, backLabel = "← Tilbake", extra }) => (
     <div style={st.header}>
-      <div onClick={goHome} title="Til forsiden" style={{ cursor: "pointer" }}>
-        <div style={st.logo}>Toolbase</div>
-        <div style={st.logoSub}>av Kenneth Almås</div>
-      </div>
-      <div style={st.nav}>
-        {extra}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         {backTo && <button style={st.backBtn} onClick={() => setView(backTo)}>{backLabel}</button>}
         <button style={st.homeBtn} onClick={goHome}>🏠 Hjem</button>
+        <div onClick={goHome} title="Til forsiden" style={{ cursor: "pointer", marginLeft: 6 }}>
+          <div style={st.logo}>Toolbase</div>
+          <div style={st.logoSub}>av Kenneth Almås</div>
+        </div>
       </div>
+      <div style={st.nav}>{extra}</div>
     </div>
   );
 
