@@ -199,10 +199,10 @@ function CalibrationBadge({ dateStr }) {
 // ── Styles ───────────────────────────────────────────────────────
 const st = {
   app:       { minHeight: "100vh", background: "radial-gradient(1100px 600px at 8% -10%, rgba(245,166,35,0.12), transparent 60%), radial-gradient(900px 520px at 100% 0%, rgba(168,85,247,0.08), transparent 55%), #0a0a0f", backgroundAttachment: "fixed", color: "#e8e8e0", fontFamily: "'DM Mono','Courier New',monospace" },
-  header:    { background: "rgba(14,14,22,0.72)", backdropFilter: "blur(16px) saturate(140%)", WebkitBackdropFilter: "blur(16px) saturate(140%)", borderBottom: "1px solid rgba(245,166,35,0.18)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 },
+  header:    { background: "rgba(14,14,22,0.72)", backdropFilter: "blur(16px) saturate(140%)", WebkitBackdropFilter: "blur(16px) saturate(140%)", borderBottom: "1px solid rgba(245,166,35,0.18)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, position: "sticky", top: 0, zIndex: 100 },
   logo:      { fontSize: 22, fontWeight: 700, letterSpacing: 2, color: "#f5a623", textTransform: "uppercase", lineHeight: 1.1 },
   logoSub:   { fontSize: 11, color: "#555", letterSpacing: 1, marginTop: 2 },
-  nav:       { display: "flex", gap: 8, alignItems: "center" },
+  nav:       { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" },
   navBtn:    (a) => ({ padding: "6px 14px", borderRadius: 6, border: "1px solid", borderColor: a ? "#f5a623" : "#f5a62344", background: a ? "#f5a62322" : "#1a120088", color: a ? "#f5a623" : "#c89040", cursor: "pointer", fontSize: 13 }),
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #f5a62344", background: "#1a120088", color: "#c89040", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
@@ -215,6 +215,8 @@ const st = {
   pill:      (s) => ({ display: "inline-block", padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: STATUS_CONFIG[s].color, background: STATUS_CONFIG[s].bg, border: `1px solid ${STATUS_CONFIG[s].border}` }),
   primary:   { padding: "10px 20px", borderRadius: 8, border: "none", background: "#f5a623", color: "#0a0a0f", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit", boxShadow: "0 0 18px rgba(245,166,35,0.30)" },
   secondary: { padding: "10px 20px", borderRadius: 8, border: "1px solid #f5a62344", background: "#1a120066", color: "#c89040", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
+  backBtn:   { padding: "8px 16px", borderRadius: 8, border: "1.5px solid #f5a623", background: "rgba(245,166,35,0.14)", color: "#f5a623", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit", boxShadow: "0 0 14px rgba(245,166,35,0.22)" },
+  homeBtn:   { padding: "8px 16px", borderRadius: 8, border: "none", background: "#f5a623", color: "#0a0a0f", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit", boxShadow: "0 0 18px rgba(245,166,35,0.35)" },
   danger:    { padding: "10px 20px", borderRadius: 8, border: "1px solid #991b1b", background: "transparent", color: "#ef4444", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
   secTitle:  { fontSize: 13, color: "#f5a623", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12, borderBottom: "1px solid #222", paddingBottom: 8 },
   g2:        { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
@@ -477,6 +479,7 @@ export default function App() {
   const [addCodeError, setAddCodeError] = useState("");
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
   const [gridCols, setGridCols] = useState(2);
+  const [prevView, setPrevView] = useState("list"); // hvor man kom fra før detaljvisning
   const [sortBy, setSortBy] = useState("navn");
   const [bulkSelected, setBulkSelected] = useState(new Set());
   const [bulkField, setBulkField] = useState("kategori");
@@ -803,21 +806,32 @@ export default function App() {
   }
 
   function goToDetail(tool, startEditing = false) {
+    setPrevView(view === "admin" || view === "calibration" ? view : "list");
     setSelectedTool(tool);
     setEditDraft(startEditing ? { ...tool } : null);
     setConfirmDelete(false);
     setView("detail");
   }
 
+  function goHome() {
+    setView("list");
+    setImportPreview(null);
+    setEditDraft(null);
+    setConfirmDelete(false);
+    setShowAddCodePrompt(false);
+    setPendingStatusChange(null);
+  }
+
   const Header = ({ backTo, backLabel = "← Tilbake", extra }) => (
     <div style={st.header}>
-      <div>
+      <div onClick={goHome} title="Til forsiden" style={{ cursor: "pointer" }}>
         <div style={st.logo}>Toolbase</div>
         <div style={st.logoSub}>av Kenneth Almås</div>
       </div>
       <div style={st.nav}>
         {extra}
-        {backTo && <button style={st.secondary} onClick={() => setView(backTo)}>{backLabel}</button>}
+        {backTo && <button style={st.backBtn} onClick={() => setView(backTo)}>{backLabel}</button>}
+        <button style={st.homeBtn} onClick={goHome}>🏠 Hjem</button>
       </div>
     </div>
   );
@@ -891,7 +905,8 @@ export default function App() {
           </div>
         )}
         <Header
-          backTo={editing ? null : "list"}
+          backTo={editing ? null : prevView}
+          backLabel={prevView === "admin" ? "← Admin" : prevView === "calibration" ? "← Kalibrering" : "← Tilbake"}
           extra={editing ? (
             <>
               <button style={st.secondary} onClick={() => { setEditDraft(null); setConfirmDelete(false); }}>Avbryt</button>
