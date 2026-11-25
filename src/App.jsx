@@ -198,8 +198,8 @@ function CalibrationBadge({ dateStr }) {
 
 // ── Styles ───────────────────────────────────────────────────────
 const st = {
-  app:       { minHeight: "100vh", background: "#0a0a0f", color: "#e8e8e0", fontFamily: "'DM Mono','Courier New',monospace" },
-  header:    { background: "#111118", borderBottom: "1px solid #222", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 },
+  app:       { minHeight: "100vh", background: "radial-gradient(1100px 600px at 8% -10%, rgba(245,166,35,0.12), transparent 60%), radial-gradient(900px 520px at 100% 0%, rgba(168,85,247,0.08), transparent 55%), #0a0a0f", backgroundAttachment: "fixed", color: "#e8e8e0", fontFamily: "'DM Mono','Courier New',monospace" },
+  header:    { background: "rgba(14,14,22,0.72)", backdropFilter: "blur(16px) saturate(140%)", WebkitBackdropFilter: "blur(16px) saturate(140%)", borderBottom: "1px solid rgba(245,166,35,0.18)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 },
   logo:      { fontSize: 22, fontWeight: 700, letterSpacing: 2, color: "#f5a623", textTransform: "uppercase", lineHeight: 1.1 },
   logoSub:   { fontSize: 11, color: "#555", letterSpacing: 1, marginTop: 2 },
   nav:       { display: "flex", gap: 8, alignItems: "center" },
@@ -207,24 +207,63 @@ const st = {
   notifBtn:  { position: "relative", padding: "6px 12px", borderRadius: 6, border: "1px solid #f5a62344", background: "#1a120088", color: "#c89040", cursor: "pointer", fontSize: 13 },
   badge:     { position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", borderRadius: 99, fontSize: 10, padding: "1px 5px", fontWeight: 700 },
   main:      { padding: "24px 16px" },
-  inp:       { background: "#1a1200", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
-  sel:       { background: "#1a1200", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
-  card:      { background: "#111118", border: "1px solid #222", borderRadius: 12, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "border-color 0.2s,background 0.2s" },
+  inp:       { background: "rgba(26,18,0,0.55)", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  sel:       { background: "rgba(26,18,0,0.55)", border: "1px solid #f5a62355", borderRadius: 8, padding: "10px 14px", color: "#e8e8e0", fontSize: 14, outline: "none", fontFamily: "inherit" },
+  card:      { background: "linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 14, padding: "16px", marginBottom: 10, cursor: "pointer", boxShadow: "0 4px 24px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)", transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s" },
   lbl:       { fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 },
   val:       { fontSize: 14, color: "#e8e8e0" },
   pill:      (s) => ({ display: "inline-block", padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: STATUS_CONFIG[s].color, background: STATUS_CONFIG[s].bg, border: `1px solid ${STATUS_CONFIG[s].border}` }),
-  primary:   { padding: "10px 20px", borderRadius: 8, border: "none", background: "#f5a623", color: "#0a0a0f", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
+  primary:   { padding: "10px 20px", borderRadius: 8, border: "none", background: "#f5a623", color: "#0a0a0f", fontWeight: 700, cursor: "pointer", fontSize: 14, fontFamily: "inherit", boxShadow: "0 0 18px rgba(245,166,35,0.30)" },
   secondary: { padding: "10px 20px", borderRadius: 8, border: "1px solid #f5a62344", background: "#1a120066", color: "#c89040", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
   danger:    { padding: "10px 20px", borderRadius: 8, border: "1px solid #991b1b", background: "transparent", color: "#ef4444", cursor: "pointer", fontSize: 14, fontFamily: "inherit" },
   secTitle:  { fontSize: 13, color: "#f5a623", textTransform: "uppercase", letterSpacing: 2, marginBottom: 12, borderBottom: "1px solid #222", paddingBottom: 8 },
   g2:        { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
   toast:     { position: "fixed", bottom: 24, right: 24, background: "#052e16", border: "1px solid #166534", color: "#22c55e", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, zIndex: 9999 },
   toastErr:  { position: "fixed", bottom: 24, right: 24, background: "#2d0000", border: "1px solid #991b1b", color: "#ef4444", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, zIndex: 9999 },
-  box:       { background: "#0d0d15", border: "1px solid #2a2a3a", borderRadius: 10, padding: 16, marginBottom: 16 },
+  box:       { background: "rgba(255,255,255,0.04)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 4px 24px rgba(0,0,0,0.25)" },
   fl:        (col) => ({ fontSize: 11, color: col || "#888", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }),
   adminBanner: { background: "#1a1200", border: "1px solid #f5a62344", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f5a623", marginBottom: 16 },
   spinner:   { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", color: "#555", fontSize: 14 },
 };
+
+// ── Global CSS (animasjoner og hover) ────────────────────────────
+const GLOBAL_CSS = `
+@keyframes tbFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tb-card:hover {
+  transform: translateY(-2px);
+  border-top-color: rgba(245,166,35,0.55) !important;
+  border-right-color: rgba(245,166,35,0.55) !important;
+  border-bottom-color: rgba(245,166,35,0.55) !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.45), 0 0 22px -4px var(--sc) !important;
+}
+.tb-chip { transition: transform 0.15s, box-shadow 0.2s, background 0.2s; }
+.tb-chip:hover { transform: translateY(-1px); }
+.tb-chip:active { transform: scale(0.96); }
+.tb-scroll { scrollbar-width: thin; scrollbar-color: rgba(245,166,35,0.35) transparent; }
+.tb-scroll::-webkit-scrollbar { height: 6px; }
+.tb-scroll::-webkit-scrollbar-thumb { background: rgba(245,166,35,0.35); border-radius: 99px; }
+@media (prefers-reduced-motion: reduce) {
+  .tb-card, .tb-chip { animation: none !important; transition: none !important; }
+}
+`;
+
+// ── Filterknapp (status og kategori) ─────────────────────────────
+function Chip({ label, count, color, active, onClick }) {
+  return (
+    <button className="tb-chip" onClick={onClick}
+      style={{
+        flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8,
+        padding: "7px 14px", borderRadius: 99, cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+        fontWeight: active ? 700 : 500, color: active ? color : color + "cc",
+        background: active ? color + "26" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${active ? color : color + "44"}`,
+        boxShadow: active ? `0 0 14px ${color}44` : "none",
+      }}>
+      {label}
+      <span style={{ fontSize: 11, background: color + "26", borderRadius: 99, padding: "1px 8px", color }}>{count}</span>
+    </button>
+  );
+}
 
 // ── ToolForm ─────────────────────────────────────────────────────
 function ToolForm({ tool, onChange, isEdit }) {
@@ -470,6 +509,15 @@ export default function App() {
     load();
   }, []);
 
+  // ── Global CSS for animasjoner/hover ──
+  useEffect(() => {
+    const el = document.createElement("style");
+    el.id = "toolbase-global-css";
+    el.textContent = GLOBAL_CSS;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
+
   function toast(msg) { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(""), 2500); }
   function toastErr(msg) { setErrorMsg(msg); setTimeout(() => setErrorMsg(""), 4000); }
 
@@ -489,12 +537,19 @@ export default function App() {
   const missingTools = tools.filter(t => t.status === "mangler");
   const unreadCount = notifications.filter(n => !n.read).length + calibrationWarnings.length + missingTools.length;
   const categories = ["alle", ...Array.from(new Set(tools.map(t => t.category)))];
-  const filtered = tools.filter(t => {
-    const q = search.toLowerCase();
-    return (t.name.toLowerCase().includes(q) || (t.serialNumber || "").toLowerCase().includes(q) || (t.location?.name || "").toLowerCase().includes(q) || (t.tags || "").toLowerCase().includes(q))
-      && (filterStatus === "alle" || t.status === filterStatus)
-      && (filterCategory === "alle" || t.category === filterCategory);
-  }).sort((a, b) => {
+  const q = search.toLowerCase();
+  const searchMatches = tools.filter(t =>
+    t.name.toLowerCase().includes(q) || (t.serialNumber || "").toLowerCase().includes(q) || (t.location?.name || "").toLowerCase().includes(q) || (t.tags || "").toLowerCase().includes(q)
+  );
+  const inStatus = t => filterStatus === "alle" || t.status === filterStatus;
+  const inCategory = t => filterCategory === "alle" || t.category === filterCategory;
+  // Tellere for hurtigfilter: status teller innenfor valgt kategori, kategori teller innenfor valgt status
+  const statusCounts = { alle: 0, ok: 0, slitt: 0, defekt: 0, mangler: 0 };
+  searchMatches.filter(inCategory).forEach(t => { statusCounts.alle++; if (t.status in statusCounts) statusCounts[t.status]++; });
+  const categoryCounts = {};
+  searchMatches.filter(inStatus).forEach(t => { categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1; });
+  const categoryTotal = searchMatches.filter(inStatus).length;
+  const filtered = searchMatches.filter(inStatus).filter(inCategory).sort((a, b) => {
     if (sortBy === "navn") return a.name.localeCompare(b.name, "nb");
     if (sortBy === "kategori") return a.category.localeCompare(b.category, "nb");
     if (sortBy === "status") return ["ok","slitt","defekt","mangler"].indexOf(a.status) - ["ok","slitt","defekt","mangler"].indexOf(b.status);
@@ -1425,7 +1480,7 @@ export default function App() {
           </button>
         </div>
       </div>
-      <div style={{ background: "#1a1200", borderBottom: "2px solid #f5a62366", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
+      <div style={{ background: "rgba(26,18,0,0.62)", backdropFilter: "blur(16px) saturate(140%)", WebkitBackdropFilter: "blur(16px) saturate(140%)", borderBottom: "1px solid rgba(245,166,35,0.35)", padding: "12px 16px", position: "sticky", top: 61, zIndex: 99 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 180, position: "relative", display: "flex" }}>
             <input style={{ ...st.inp, flex: 1, paddingRight: search ? 36 : 14 }} placeholder="🔍  Søk etter navn, serienr, sted..."
@@ -1435,16 +1490,6 @@ export default function App() {
                 style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 0 }}>✕</button>
             )}
           </div>
-          <select style={{ ...st.sel, flex: 1 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="alle">Alle statuser</option>
-            <option value="ok">OK</option>
-            <option value="slitt">Slitt</option>
-            <option value="defekt">Defekt</option>
-            <option value="mangler">Mangler</option>
-          </select>
-          <select style={{ ...st.sel, flex: 1 }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-            {categories.map(c => <option key={c} value={c}>{c === "alle" ? "Alle kategorier" : c}</option>)}
-          </select>
           <select style={{ ...st.sel, flex: 1 }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
             <option value="navn">Sorter: Navn</option>
             <option value="kategori">Sorter: Kategori</option>
@@ -1458,6 +1503,13 @@ export default function App() {
               Nullstill filter
             </button>
           )}
+        </div>
+        <div className="tb-scroll" style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", paddingBottom: 4 }}>
+          <Chip label="Alle" count={statusCounts.alle} color="#f5a623" active={filterStatus === "alle"} onClick={() => setFilterStatus("alle")} />
+          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+            <Chip key={key} label={cfg.label} count={statusCounts[key]} color={cfg.color}
+              active={filterStatus === key} onClick={() => setFilterStatus(filterStatus === key ? "alle" : key)} />
+          ))}
         </div>
       </div>
       <div style={st.main}>
@@ -1477,6 +1529,16 @@ export default function App() {
             </div>
           </div>
         )}
+        {categories.length > 2 && (
+          <div className="tb-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 10 }}>
+            <Chip label="Alle kategorier" count={categoryTotal} color="#f5a623"
+              active={filterCategory === "alle"} onClick={() => setFilterCategory("alle")} />
+            {categories.filter(c => c !== "alle").map(c => (
+              <Chip key={c} label={c || "Uten kategori"} count={categoryCounts[c] || 0} color="#c89040"
+                active={filterCategory === c} onClick={() => setFilterCategory(filterCategory === c ? "alle" : c)} />
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ color: "#555", fontSize: 12 }}>{filtered.length} verktøy vises</div>
           <div style={{ display: "flex", gap: 4 }}>
@@ -1487,13 +1549,23 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: gridCols === 1 ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
-        {filtered.map(tool => {
+        {filtered.map((tool, idx) => {
           const calibDays = getDaysUntilCalibration(tool.lastCalibration);
           const calibWarning = tool.calibrationRequired && calibDays !== null && calibDays <= 30;
+          const sc = (STATUS_CONFIG[tool.status] || STATUS_CONFIG.ok).color;
+          const needsAttention = tool.status !== "ok";
           return (
-            <div key={tool.id} style={{ ...st.card, marginBottom: 0 }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#f5a623"; e.currentTarget.style.background = "#111820"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#222"; e.currentTarget.style.background = "#111118"; }}
+            <div key={tool.id} className="tb-card"
+              style={{
+                ...st.card, marginBottom: 0,
+                "--sc": sc,
+                borderLeft: `4px solid ${sc}`,
+                boxShadow: needsAttention
+                  ? `0 4px 24px rgba(0,0,0,0.30), 0 0 20px -4px ${sc}88, inset 0 1px 0 rgba(255,255,255,0.06)`
+                  : st.card.boxShadow,
+                animation: "tbFade 0.4s ease both",
+                animationDelay: `${Math.min(idx, 12) * 30}ms`,
+              }}
               onClick={() => goToDetail(tool, false)}>
               {tool.imageUrl && (
                 <img src={tool.imageUrl} alt={tool.name}
